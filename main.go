@@ -13,6 +13,10 @@ import (
 
 var db *sql.DB
 
+//Net:                  "tcp",
+//Addr:                 "127.0.0.1:62001",
+//DBName:               "MCP",
+
 // Define the ErrorTask we want to add to a slice and put into a list
 type ErrorTask struct {
 	TaskUUID  string `field:"task_uuid"`
@@ -24,11 +28,14 @@ func main() {
 	// Get user input
 	dbPass := flag.String("dbPass", "", "Password for the Database.")
 	dbUser := flag.String("dbUser", "", "User for the Database.")
+	dbNet := flag.String("dbNet", "", "Net for the Database.")
+	ipAddr := flag.String("ipAddr", "", "IP Address for the Database.")
+	dbName := flag.String("dbName", "", "Name of the Database")
 	keyFileName := flag.String("keyFile", "", "A file containing a list of keywords")
 	outputFileName := flag.String("outputFile", "", "A file containing a list of keywords")
 	flag.Parse()
 	// Get DB connection
-	connectDB(*dbUser, *dbPass)
+	connectDB(*dbUser, *dbPass, *dbNet, *ipAddr, *dbName)
 	// Get keywords from user provided file
 	keywords := getKeywordsFromFile(*keyFileName)
 	// Declare a slice to hold all error tasks
@@ -48,13 +55,13 @@ func main() {
 	writeToFile(*outputFileName, extractedErrorTasks)
 }
 
-func connectDB(user string, pass string) *sql.DB {
+func connectDB(user string, pass string, net string, ipAddr string, dbName string) *sql.DB {
 	cfg := mysql.Config{
 		User:                 user,
 		Passwd:               pass,
-		Net:                  "tcp",
-		Addr:                 "127.0.0.1:62001",
-		DBName:               "MCP",
+		Net:                  net,
+		Addr:                 ipAddr,
+		DBName:               dbName,
 		AllowNativePasswords: true,
 	}
 	// Get database handle.
