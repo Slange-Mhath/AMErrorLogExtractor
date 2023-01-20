@@ -35,28 +35,17 @@ func main() {
 	var extractedErrorTasks []string
 	// if no keywords were provided call the function with an empty string
 	if len(keywords) == 0 {
-		errorTasks, err := getErrorTasks("")
-		if err != nil {
-			log.Fatal(err)
-			// continue
-		}
+		errorTasks := getErrorTasks("")
 		extractedErrorTasks = append(extractedErrorTasks, errorTasks...)
 		// if keywords were provided call the function with each keyword
 	} else {
 		for _, k := range keywords {
-			errorTasks, err := getErrorTasks(k)
-			if err != nil {
-				log.Fatal(err)
-				// continue
-			}
+			errorTasks := getErrorTasks(k)
 			extractedErrorTasks = append(extractedErrorTasks, errorTasks...)
 		}
 	}
 	// Write the error tasks to a file
-	err := writeToFile(*outputFileName, extractedErrorTasks)
-	if err != nil {
-		return
-	}
+	writeToFile(*outputFileName, extractedErrorTasks)
 }
 
 func connectDB(user string, pass string) *sql.DB {
@@ -96,23 +85,23 @@ func getKeywordsFromFile(fileName string) []string {
 
 }
 
-func getErrorTasks(keyword string) ([]string, error) {
+func getErrorTasks(keyword string) []string {
 	// An errorTasks slice to hold data from returned rows.
 	var errorTasks []string
 	// If no keywords are provided query every error task which has a std_error output
 	if keyword == "" {
 		rows, err := db.Query("SELECT taskUUID, createdTime, stdError FROM Tasks WHERE stdError IS NOT NULL AND stdError != ''")
 		if err != nil {
-			return nil, err
+			log.Fatal(err)
 		}
 		for rows.Next() {
 			var task ErrorTask
 			if err := rows.Scan(&task.TaskUUID, &task.CreatedAt, &task.StdError); err != nil {
-				return nil, err
+				log.Fatal(err)
 			}
 			taskJson, err := json.Marshal(task)
 			if err != nil {
-				return nil, err
+				log.Fatal(err)
 			}
 			// Add the task to the errorTasks slice.
 			errorTasks = append(errorTasks, string(taskJson))
@@ -123,16 +112,16 @@ func getErrorTasks(keyword string) ([]string, error) {
 		rows, err := db.Query("SELECT taskUUID, createdTime, stdError FROM Tasks WHERE stdError IS NOT NULL AND stdError != '' AND stdError COLLATE utf8_general_ci LIKE ?", "%"+keyword+"%")
 
 		if err != nil {
-			return nil, err
+			log.Fatal(err)
 		}
 		for rows.Next() {
 			var task ErrorTask
 			if err := rows.Scan(&task.TaskUUID, &task.CreatedAt, &task.StdError); err != nil {
-				return nil, err
+				log.Fatal(err)
 			}
 			taskJson, err := json.Marshal(task)
 			if err != nil {
-				return nil, err
+				log.Fatal(err)
 			}
 			// Add the task to the errorTasks slice.
 			errorTasks = append(errorTasks, string(taskJson))
@@ -140,22 +129,21 @@ func getErrorTasks(keyword string) ([]string, error) {
 		defer rows.Close()
 	}
 
-	return errorTasks, nil
+	return errorTasks
 }
 
-func writeToFile(fileName string, errorTasks []string) error {
+func writeToFile(fileName string, errorTasks []string) {
 	// Create the file.
 	file, err := os.Create(fileName)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	defer file.Close()
 	// Write tasks to the file.
 	for _, task := range errorTasks {
 		_, err := file.WriteString(task)
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
-	return nil
 }
