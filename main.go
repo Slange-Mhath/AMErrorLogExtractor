@@ -14,19 +14,12 @@ import (
 
 var db *sql.DB
 
-//Net:                  "tcp",
-//Addr:                 "127.0.0.1:62001",
-//DBName:               "MCP",
-
 // Define the ErrorTask we want to add to a slice and put into a list
 type ErrorTask struct {
 	TaskUUID  string `field:"task_uuid"`
 	CreatedAt string `field:"created_at"`
 	StdError  string `field:"std_error"`
 }
-
-// ByCreatedAt is a type for sorting tasks
-type ByCreatedAt []ErrorTask
 
 func main() {
 	// Get user input
@@ -62,12 +55,18 @@ func main() {
 		// if keywords were provided call the function with each keyword
 	} else {
 		for _, k := range keywords {
-			errorTasks, updatedTaskTime = getErrorTasks(k, givenLastTaskTime)
-			if len(errorTasks) != 0 {
-				foundNewErrors = true
-				numOfNewErrors = len(errorTasks)
+			returnedTaskTime := ""
+			errorTasks, returnedTaskTime = getErrorTasks(k, givenLastTaskTime)
+			// If no error task is found in an iteration because the given keyword does not exist, don't default back to the old updatedTaskTime
+			if returnedTaskTime != "None" {
+				updatedTaskTime = returnedTaskTime
 			}
+			// I think the problem is that if no error task is found it returns the updatedTask which was given which is a problem
 			extractedErrorTasks = append(extractedErrorTasks, errorTasks...)
+		}
+		if len(extractedErrorTasks) != 0 {
+			foundNewErrors = true
+			numOfNewErrors = len(extractedErrorTasks)
 		}
 	}
 	// Write the error tasks to a file
@@ -150,9 +149,10 @@ func getErrorTasks(keyword string, givenLastTaskTime string) ([]string, string) 
 		rows.Close()
 		// If keywords are provided query every error task which has a std_error output and contains the keyword
 	} else {
-		// TODO Only get tasks which are newer than the last task time
 		rows, err := db.Query("SELECT taskUUID, createdTime, stdError FROM Tasks WHERE stdError IS NOT NULL AND stdError != '' AND stdError COLLATE utf8_general_ci LIKE ? AND createdTime > ? ORDER BY createdTime DESC", "%"+keyword+"%", lastTaskTime)
-
+		if !rows.Next() {
+			lastTaskTime = "None"
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -257,3 +257,5 @@ func readLatestTaskTimeFile(lastTaskTimeFileName string) string {
 	}
 	return lastTaskTime
 }
+
+// TODO: If a keyword is added which is not in the error log we run in this weird problem that the lastTaskTime is not updated.
