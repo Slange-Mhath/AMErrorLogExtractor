@@ -73,15 +73,22 @@ Provide the following parameters to the tool:
 5. dbName: The name of the Archivematica database
 6. keyFile: The path to the file containing the keywords
 7. outputFile: The path to the output file
+8. lastTaskTimeFileName: The path to the file containing the CreatedAt time of the last task which was added to the error log.
 
 So an example would probably look like that: 
 
    ```sh
-    go run . -dbPass=mypassword -dbUser=myuser -dbNet=tcp -ipAddr=127.0.0.1:62001 -dbName=mydb -keyFile=keywords.txt -outputFile=output.json
+    go run . -dbPass=mypassword -dbUser=myuser -dbNet=tcp -ipAddr=127.0.0.1:62001 -dbName=mydb -keyFile=keywords.txt -outputFile=output.json -lastTaskTimeFileName=lastTaskTime.txt
    ```
 
+### IMPORTANT:
 
+Make sure that the file lastTaskTimeFilmeName exist and has a time in it which is formatted like this: 
+```
+2023-02-01 14:32:54.142802 
+```
 
+If the file given in the outputFile parameter does not exist, it will be created. If it exists the newly extracted logs will be appended and written line by line.
 <!-- LICENSE -->
 ## License
 
